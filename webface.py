@@ -1,8 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import functools
 
-# from werkzeug.security import generate_password_hash, check_password_hash
- category
+# from werkzeug.security import generate_password_hash, check_password_hash 
 app = Flask(__name__)
 app.secret_key = b"totoj e zceLa n@@@hodny retezec nejlep os.urandom(24)"
 app.secret_key = b"x6\x87j@\xd3\x88\x0e8\xe8pM\x13\r\xafa\x8b\xdbp\x8a\x1f\xd41\xb8"
@@ -32,8 +31,11 @@ def info():
     return render_template("info.html")
 
 
-@app.route("/abc/")
+@app.route("/abc/", methods=["GET", "POST"] )
 def abc():
+    if "uživatel" not in session:
+        flash('Nejsi přihlášen. Tato stránka vyžaduje přihlášení.', 'error')
+        return redirect(url_for("login", page=request.full_path))
     return render_template("abc.html", slova=slova)
 
 
@@ -41,7 +43,7 @@ def abc():
 def malina():
     if "uživatel" not in session:
         flash('Nejsi přihlášen. Tato stránka vyžaduje přihlášení.', 'error')
-        return redirect(url_for("login"))
+        return redirect(url_for("login", page=request.full_path))
 
     hmotnost = request.args.get("hmotnost")
     vyska = request.args.get("vyska")
@@ -73,8 +75,16 @@ def login():
 def login_post():
     jmeno = request.form.get("jmeno")
     heslo = request.form.get("heslo")
+    page = request.args.get("page")
     if jmeno == "marek" and heslo == "lokomotiva":
+        flash("Jsi přihlášen!", "message")
         session["uživatel"] = jmeno
+        if page:
+            return redirect(page)
+    else:
+        flash("Nesprávné přihlašovací údaje", "error")
+    if page:
+        return redirect(url_for("login", page=page))
     return redirect(url_for("login"))
 
 
