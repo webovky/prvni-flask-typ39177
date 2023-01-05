@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import functools
-
+import random
+import string
 # from werkzeug.security import generate_password_hash, check_password_hash 
 app = Flask(__name__)
 app.secret_key = b"totoj e zceLa n@@@hodny retezec nejlep os.urandom(24)"
@@ -92,3 +93,18 @@ def login_post():
 def logout():
     session.pop("uživatel", None)
     return redirect(url_for("index"))
+
+@app.route("/zkracovac/")
+def zkracovac():
+    return render_template("Zkracovac.html")
+    
+@app.route("/zkracovac/", methods=["POST"])
+def zkracovac_post():
+    url = request.form.get("url")
+    zkratka =  ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    with SQLite("data.db") as cur:
+        cur.execute(
+            "INSERT INTO adresy (zkratka.adresa) VALUES (?,?)", [zkratka, url]
+        )
+    return redirect(url_for("zkaracovac"))
+

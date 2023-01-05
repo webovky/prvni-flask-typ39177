@@ -76,4 +76,12 @@ footer {
     background-color: white;
 }
 
+.url {
+  font-size: 150%;
+}
+
+.url input{
+  width: 80%;
+  font-size: 170%;
+}
 /*# sourceMappingURL=styles.css.map */
