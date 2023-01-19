@@ -5,6 +5,7 @@ import string
 import sqlite3
 from mysqlite import SQLite
 import re
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
@@ -81,7 +82,12 @@ def login_post():
     jmeno = request.form.get("jmeno")
     heslo = request.form.get("heslo")
     page = request.args.get("page")
-    if jmeno == "marek" and heslo == "lokomotiva":
+
+    with SQLite("data.db") as cur:
+        cur.execute("SELECT passwd FROM user WHERE login = ?", [jmeno])
+        ans = cur.fetchall()
+
+    if ans and check_password_hash(ans[0][0], heslo):
         flash("Jsi přihlášen!", "message")
         session["uživatel"] = jmeno
         if page:
@@ -93,36 +99,40 @@ def login_post():
     return redirect(url_for("login"))
 
 
-"""
-@app.route("/registrace/", methods = ["GET", "POST"])
-def registrace():
-    if request.method == "GET":
-        return render_template("registrace.html")
 
-    if request.method == "POST":
-        jmeno = request.form.get("jmeno")
-        heslo = request.form.get("heslo")
-        heslo2 = request.fomr.get("heslo_znovu")
-        if not (jmeno and heslo2 and heslo):
-            flash("Všechna pole nejsou vyplněná!", "message")
-            return redirect(url_for("registrace"))
-        if heslo != heslo2:
-            flash("Hesla se neshodují!", "message")
-            return redirect(url_for("registrace"))
-        try:
-            with SQLite("data.db") as cur:
-                cur.execute("INSERT INTO user (login, passwd) VALUES (?, ?)" ,[jmeno,generate_password_hash(heslo)])
-                cur.execute("SELECT passwd FROM user WHERE login = ?", [jmeno])
-                flash("Jsi zaregistrován.", "message")
-                flash("Jsi přihlášen.", "message")
-                session["uživatel"] = jmeno
-                return redirect(url_for("index"))
-        except sqlite3.IntegrityError:
-            flash("Jméno již existuje!", "message")
-            return redirect(url_for("registrace"))
-    return redirect(url_for(registrace))
-"""
+@app.route("/registrate/", methods=["GET"])
+def registrate():
+    return render_template("registrate.html")
 
+
+@app.route("/registrate/", methods=["POST"])
+def registrate_post():
+    jmeno = request.form.get("jmeno")
+    heslo = request.form.get("heslo")
+    heslo2 = request.form.get("heslo2")
+
+    if not (jmeno and heslo and heslo2):
+        flash("Je nutné vyplnit všechna políčka!", "error")
+        return redirect(url_for("registrate"))
+
+    if heslo != heslo2:
+        flash("Obě hesla musí být stejná!", "error")
+        return redirect(url_for("registrate"))
+
+    heslo_hash = generate_password_hash(heslo)
+    try:
+        with SQLite("data.db") as cur:
+            cur.execute(
+                "INSERT INTO user (login, passwd) VALUES (?,?)", [jmeno, heslo_hash]
+            )
+        flash("Právě jsi se zaregistroval.", "message")
+        flash("Jsi přihlášen....", "message")
+        session["uživatel"] = jmeno
+        return redirect(url_for("index"))
+    except sqlite3.IntegrityError:
+        flash(f"Jméno {jmeno} již existuje. Vyberte jiné.", "error")
+
+    return redirect(url_for("registrate"))
 
 @app.route("/logout/", methods=["GET", "POST"])
 def logout():

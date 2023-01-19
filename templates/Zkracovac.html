@@ -17,6 +17,11 @@
     </p>
 </form>
 
-
-
+<h2>Seznam uložených zkratek</h2>
+<ul>
+{% for zkratka, adresa in zkratky  %}
+<li><a href="{{ url_for('dezkracovac', zkratka=zkratka)}}">{{ zkratka }}:</a>
+    <a href="{{ adresa }}"> {{ adresa }}</a></li>
+{% endfor %}
+</ul>
 {% endblock obsah %}
